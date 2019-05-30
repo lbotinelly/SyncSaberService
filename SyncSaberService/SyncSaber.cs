@@ -93,7 +93,7 @@ namespace SyncSaberService
             }
             if (!songAlreadyInPlaylist)
             {
-                playlist.Add(songIndex, songName);
+                playlist.Add(songName, songIndex, "");
                 Logger.Info($"Success adding new song \"{songName}\" with BeatSaver index {songIndex} to playlist {playlist.Title}!");
             }
         }

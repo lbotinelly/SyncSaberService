@@ -34,6 +34,8 @@ namespace SyncSaberService.Web
         private static readonly string SEARCHKEY = "{SEARCH}";
         private const int SONGSPERUSERPAGE = 20;
         private const string INVALIDFEEDSETTINGSMESSAGE = "The IFeedSettings passed is not a BeatSaverFeedSettings.";
+        private static readonly string SONG_DETAILS_URL_BASE = "https://beatsaver.com/api/songs/detail/";
+        private static readonly string SONG_BY_HASH_URL_BASE = "https://beatsaver.com/api/songs/search/hash/";
 
         private ConcurrentDictionary<string, string> _authors = new ConcurrentDictionary<string, string>();
         private static Dictionary<int, FeedInfo> _feeds;
@@ -55,6 +57,19 @@ namespace SyncSaberService.Web
                 return _feeds;
             }
         }
+        /// <summary>
+        /// Used to replace {SEARCHTYPEKEY} in the Beat Saver search URL.
+        /// </summary>
+        public enum SearchType
+        {
+            author, // author name (not necessarily uploader)
+            name, // song name only
+            user, // user (uploader) name
+            hash, // MD5 Hash
+            song, // song name, song subname, author 
+            all // name, user, song
+        }
+
         private readonly Playlist _beatSaverNewest = new Playlist("BeatSaverNewestPlaylist", "BeatSaver Newest", "SyncSaber", "1");
 
         public Playlist[] PlaylistsForFeed(int feedIndex)
@@ -82,7 +97,7 @@ namespace SyncSaberService.Web
             return Feeds[feedIndex].BaseUrl.Replace(AUTHORIDKEY, mapperId).Replace(PAGEKEY, (pageIndex * SONGSPERUSERPAGE).ToString());
         }
 
-        
+
 
         /// <summary>
         /// 
@@ -290,16 +305,6 @@ namespace SyncSaberService.Web
             return songs;
         }
 
-        public enum SearchType
-        {
-            author, // author name (not necessarily uploader)
-            name, // song name only
-            user, // user (uploader) name
-            hash, // MD5 Hash
-            song, // song name, song subname, author 
-            all // name, user, song
-        }
-
         public static List<SongInfo> Search(string criteria, SearchType type)
         {
             StringBuilder url = new StringBuilder(Feeds[98].BaseUrl);
@@ -307,6 +312,46 @@ namespace SyncSaberService.Web
             url.Replace(SEARCHKEY, criteria);
             string pageText = GetPageText(url.ToString());
             return ParseSongsFromPage(pageText);
+        }
+
+        public static SongInfo GetSongFromHash(string hash)
+        {
+            string url;
+            if (!string.IsNullOrEmpty(hash))
+            {
+                url = SONG_BY_HASH_URL_BASE + hash;
+            }
+            else
+                return null;
+            string pageText = GetPageText(url);
+            SongInfo newSong = ParseSongsFromPage(pageText).FirstOrDefault();
+            return newSong;
+        }
+
+        public static SongInfo GetSongFromKey(string key)
+        {
+            string url;
+            if (!string.IsNullOrEmpty(key))
+            {
+                url = SONG_DETAILS_URL_BASE + key;
+            }
+            else
+                return null;
+            string pageText = GetPageText(url);
+            JObject result = new JObject();
+            try
+            {
+                result = JObject.Parse(pageText);
+            }
+            catch (Exception ex)
+            {
+                Logger.Exception("Unable to parse JSON from text", ex);
+            }
+            SongInfo newSong = new SongInfo();
+            JsonConvert.PopulateObject(result["song"].ToString(), newSong);
+            if (newSong.key != key)
+                Logger.Warning($"The provided key, {key}, does not match the latest version on Beat Saver, {newSong.key}.");
+            return newSong;
         }
 
         public string GetAuthorID(string authorName)

@@ -23,7 +23,7 @@ namespace SyncSaberService
                 foreach (KeyValuePair<string, JSONNode> aKeyValue in jsonnode["songs"].AsArray)
                 {
                     JSONNode jsonnode2 = aKeyValue;
-                    playlist.Songs.Add(new PlaylistSong(jsonnode2["key"], jsonnode2["songName"]));
+                    playlist.Songs.Add(new PlaylistSong(jsonnode2["songName"], jsonnode2["key"], ""));
                 }
                 playlist.fileLoc = null;
 

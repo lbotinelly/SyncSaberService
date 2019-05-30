@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace SyncSaberService
 {
@@ -20,9 +21,9 @@ namespace SyncSaberService
             this.ReadPlaylist();
         }
 
-        public void Add(string songIndex, string songName)
+        public void Add(string songName, string songIndex, string songHash)
         {
-            this.Songs.Add(new PlaylistSong(songIndex, songName));
+            this.Songs.Add(new PlaylistSong(songName, songIndex, songHash));
         }
 
         public void WritePlaylist()
@@ -60,18 +61,30 @@ namespace SyncSaberService
             return false;
         }
 
+        [JsonProperty("playlistTitle")]
         public string Title;
 
+        [JsonProperty("playlistAuthor")]
         public string Author;
 
+        [JsonProperty("playlistDescription")]
         public string Image;
 
+        [JsonProperty("songs")]
         public List<PlaylistSong> Songs;
 
+        [JsonIgnore]
         public string fileLoc;
 
+        [JsonIgnore]
         public string fileName;
 
+        [JsonIgnore]
         public bool oldFormat = true;
+    }
+
+    public class PlayListSong
+    {
+        
     }
 }
